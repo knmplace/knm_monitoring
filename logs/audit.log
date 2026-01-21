@@ -1,0 +1,2 @@
+[2026-01-21T18:29:45.529Z] [admindemo@example.com] PM2_STOP - Project: demosite, Process: apps-dev
+[2026-01-21T18:30:20.617Z] [admindemo@example.com] PM2_START - Project: demosite, Process: apps-dev
