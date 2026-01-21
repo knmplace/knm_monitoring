@@ -35,21 +35,35 @@ export const projects: Project[] = [
     },
     healthCheckUrl: 'http://localhost:9000/health',
   },
+  {
+    id: 'knm-monitoring',
+    name: 'KNM Monitoring Dashboard',
+    description: 'System monitoring dashboard for PM2 processes, health checks, and server metrics',
+    pm2Processes: ['knm-monitoring'],
+    systemdServices: [],
+    ports: [5005],
+    logPaths: {
+      pm2: '/home/apps/monitoring/logs',
+      deployment: '/home/apps/monitoring/logs/deployment.log',
+      webhook: '/home/apps/monitoring/logs/webhook.log',
+    },
+    healthCheckUrl: 'http://localhost:5005/api/system/overview',
+  },
   // Add more projects here as needed
   // Example:
   // {
-  //   id: 'project-b',
-  //   name: 'Project B',
-  //   description: 'Description of Project B',
-  //   pm2Processes: ['project-b-dev', 'project-b-prod'],
-  //   systemdServices: ['project-b-webhook'],
+  //   id: 'project-c',
+  //   name: 'Project C',
+  //   description: 'Description of Project C',
+  //   pm2Processes: ['project-c-dev', 'project-c-prod'],
+  //   systemdServices: ['project-c-webhook'],
   //   ports: [4000, 9001],
   //   logPaths: {
-  //     pm2: '/home/apps/project-b/logs',
-  //     deployment: '/home/apps/project-b/logs/deployment.log',
-  //     webhook: '/home/apps/project-b/logs/webhook.log',
+  //     pm2: '/home/apps/project-c/logs',
+  //     deployment: '/home/apps/project-c/logs/deployment.log',
+  //     webhook: '/home/apps/project-c/logs/webhook.log',
   //   },
-  //   healthCheckUrl: 'http://localhost:9001/health',
+  //   healthCheckUrl: 'http://localhost:4000/health',
   // },
 ];
 
