@@ -18,6 +18,8 @@ export interface Project {
     webhook: string;  // Webhook log file
   };
   healthCheckUrl?: string;  // Optional health check endpoint
+  isRemote?: boolean;  // If true, this project runs on a remote server
+  remoteHost?: string;  // Remote server hostname/IP
 }
 
 export const projects: Project[] = [
@@ -48,6 +50,22 @@ export const projects: Project[] = [
       webhook: '/home/apps/monitoring/logs/webhook.log',
     },
     healthCheckUrl: 'http://localhost:5005/api/system/overview',
+  },
+  {
+    id: 'niko-tv',
+    name: 'Niko TV',
+    description: 'Modern IPTV player with live TV, EPG, movies, and series support (Remote Server)',
+    pm2Processes: ['niko-tv-dev'],
+    systemdServices: [],
+    ports: [3010],
+    logPaths: {
+      pm2: '/home/apps/niko-tv/logs',
+      deployment: '/home/apps/niko-tv/logs/deployment.log',
+      webhook: '/home/apps/niko-tv/logs/webhook.log',
+    },
+    healthCheckUrl: 'http://192.168.1.221:3010',
+    isRemote: true,
+    remoteHost: '192.168.1.221',
   },
   // Add more projects here as needed
   // Example:
