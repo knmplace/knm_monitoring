@@ -13,7 +13,7 @@ import { StatusBadge } from '@/components/StatusBadge';
 import { LogModal } from '@/components/LogModal';
 import { WebhookStatus } from '@/components/WebhookStatus';
 import Link from 'next/link';
-import { ArrowLeft, Loader2, RefreshCw, Activity, Server, FileText } from 'lucide-react';
+import { ArrowLeft, Loader2, RefreshCw, Activity, Server, FileText, Rocket, Shield, Globe } from 'lucide-react';
 
 export default function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -32,6 +32,10 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   const [deploymentLogs, setDeploymentLogs] = useState('');
   const [logsLoading, setLogsLoading] = useState(false);
   const [isRestartingWebhook, setIsRestartingWebhook] = useState(false);
+  const [isDeploying, setIsDeploying] = useState(false);
+  const [deployOutput, setDeployOutput] = useState<string | null>(null);
+  const [deployError, setDeployError] = useState<string | null>(null);
+  const [vpnStatus, setVpnStatus] = useState<any>(null);
 
   const fetchProjectData = async () => {
     if (!idToken) return;
@@ -73,6 +77,21 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
         const healthData = await healthResponse.json();
         if (healthData.success) {
           setHealth(healthData.health);
+        }
+      }
+
+      // Fetch VPN status if remote project
+      if (currentProject?.isRemote) {
+        try {
+          const vpnResponse = await fetch(`/api/projects/${id}/vpn-status`, {
+            headers: { Authorization: `Bearer ${idToken}` },
+          });
+          const vpnData = await vpnResponse.json();
+          if (vpnData.success) {
+            setVpnStatus(vpnData.vpn);
+          }
+        } catch (error) {
+          console.error('Error fetching VPN status:', error);
         }
       }
     } catch (error) {
@@ -146,6 +165,40 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     }
   };
 
+  const handleDeploy = async () => {
+    setIsDeploying(true);
+    setDeployOutput(null);
+    setDeployError(null);
+
+    try {
+      const response = await fetch(`/api/projects/${id}/deploy`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${idToken}`,
+        },
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setDeployOutput(result.output || 'Deployment completed successfully');
+        // Refresh deployment logs after successful deployment
+        setTimeout(() => {
+          fetchDeploymentLogs();
+          fetchProjectData();
+        }, 1000);
+      } else {
+        setDeployError(result.error || 'Deployment failed');
+        setDeployOutput(result.output || null);
+      }
+    } catch (error: any) {
+      setDeployError(error.message || 'Failed to trigger deployment');
+    } finally {
+      setIsDeploying(false);
+    }
+  };
+
   useEffect(() => {
     if (idToken) {
       fetchProjectData();
@@ -199,28 +252,31 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
           ) : (
             <div className="space-y-8">
               {/* Status Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-white rounded-lg border border-gray-200 p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">PM2 Processes</p>
-                      <p className="text-2xl font-bold text-gray-900 mt-2">
-                        {processes.filter(p => p.pm2_env?.status === 'online').length}/
-                        {processes.length}
-                      </p>
+              <div className={`grid grid-cols-1 ${project?.pm2Processes?.length > 0 ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-6`}>
+                {/* Only show PM2 card if project uses PM2 */}
+                {project?.pm2Processes && project.pm2Processes.length > 0 && (
+                  <div className="bg-white rounded-lg border border-gray-200 p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">PM2 Processes</p>
+                        <p className="text-2xl font-bold text-gray-900 mt-2">
+                          {processes.filter(p => p.pm2_env?.status === 'online').length}/
+                          {processes.length}
+                        </p>
+                      </div>
+                      <Activity className="h-8 w-8 text-blue-600" />
                     </div>
-                    <Activity className="h-8 w-8 text-blue-600" />
+                    <div className="mt-4">
+                      <StatusBadge
+                        status={
+                          processes.every(p => p.pm2_env?.status === 'online')
+                            ? 'online'
+                            : 'partial'
+                        }
+                      />
+                    </div>
                   </div>
-                  <div className="mt-4">
-                    <StatusBadge
-                      status={
-                        processes.every(p => p.pm2_env?.status === 'online')
-                          ? 'online'
-                          : 'partial'
-                      }
-                    />
-                  </div>
-                </div>
+                )}
 
                 <div className="bg-white rounded-lg border border-gray-200 p-6">
                   <div className="flex items-center justify-between">
@@ -263,6 +319,117 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 </div>
               )}
 
+              {/* VPN Status */}
+              {vpnStatus && (
+                <div className="bg-white rounded-lg border border-gray-200 p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <Shield className="h-6 w-6 text-blue-600" />
+                      <h2 className="text-lg font-semibold text-gray-900">VPN Status</h2>
+                    </div>
+                    <StatusBadge status={vpnStatus.connected && vpnStatus.healthy ? 'online' : 'offline'} />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="flex items-start gap-3">
+                      <Globe className="h-5 w-5 text-gray-400 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">Public IP</p>
+                        <p className="text-base font-semibold text-gray-900 mt-1">
+                          {vpnStatus.publicIP || 'Not connected'}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-3">
+                      <Globe className="h-5 w-5 text-gray-400 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">Location</p>
+                        <p className="text-base font-semibold text-gray-900 mt-1">
+                          {vpnStatus.location || 'Unknown'}
+                        </p>
+                      </div>
+                    </div>
+
+                    {vpnStatus.provider && (
+                      <div className="flex items-start gap-3">
+                        <Shield className="h-5 w-5 text-gray-400 mt-0.5" />
+                        <div>
+                          <p className="text-sm font-medium text-gray-600">VPN Provider</p>
+                          <p className="text-base font-semibold text-gray-900 mt-1">
+                            {vpnStatus.provider}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {vpnStatus.server && (
+                      <div className="flex items-start gap-3">
+                        <Server className="h-5 w-5 text-gray-400 mt-0.5" />
+                        <div>
+                          <p className="text-sm font-medium text-gray-600">Server</p>
+                          <p className="text-base font-semibold text-gray-900 mt-1">
+                            {vpnStatus.server}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="mt-4 flex items-center gap-2">
+                    <div className={`h-2 w-2 rounded-full ${vpnStatus.healthy ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></div>
+                    <span className="text-sm text-gray-600">
+                      {vpnStatus.healthy ? 'Connected & Healthy' : 'Connection Issues'}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* Manual Deployment */}
+              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h2 className="text-lg font-semibold text-gray-900">Manual Deployment</h2>
+                    <p className="text-sm text-gray-600 mt-1">
+                      Deploy latest changes from repository to {project?.isRemote ? 'remote server' : 'server'}
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleDeploy}
+                    disabled={isDeploying}
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                  >
+                    {isDeploying ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Deploying...
+                      </>
+                    ) : (
+                      <>
+                        <Rocket className="h-4 w-4" />
+                        Deploy Now
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {deployError && (
+                  <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-md">
+                    <p className="text-sm font-medium text-red-900">Deployment Failed</p>
+                    <p className="text-sm text-red-700 mt-1">{deployError}</p>
+                  </div>
+                )}
+
+                {deployOutput && !deployError && (
+                  <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-md">
+                    <p className="text-sm font-medium text-green-900">Deployment Successful</p>
+                    <pre className="text-xs text-green-700 mt-2 whitespace-pre-wrap font-mono max-h-48 overflow-y-auto">
+                      {deployOutput}
+                    </pre>
+                  </div>
+                )}
+              </div>
+
               {/* Webhook Status */}
               <WebhookStatus
                 projectId={id}
@@ -271,15 +438,17 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 isRestarting={isRestartingWebhook}
               />
 
-              {/* PM2 Processes Table */}
-              <div>
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">PM2 Processes</h2>
-                <ProcessTable
-                  processes={processes}
-                  projectId={id}
-                  onRefresh={fetchProjectData}
-                />
-              </div>
+              {/* PM2 Processes Table - Only show if project uses PM2 */}
+              {project?.pm2Processes && project.pm2Processes.length > 0 && (
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900 mb-4">PM2 Processes</h2>
+                  <ProcessTable
+                    processes={processes}
+                    projectId={id}
+                    onRefresh={fetchProjectData}
+                  />
+                </div>
+              )}
 
               {/* Logs Section */}
               <div>

@@ -10,7 +10,7 @@ import { useAuth } from '@/components/AuthProvider';
 import { AuthGate } from '@/components/AuthGate';
 import { ProjectCard } from '@/components/ProjectCard';
 import { useRouter } from 'next/navigation';
-import { Loader2, LogOut, RefreshCw } from 'lucide-react';
+import { Loader2, LogOut, RefreshCw, Container, ExternalLink } from 'lucide-react';
 
 interface ProjectOverview {
   id: string;
@@ -115,6 +115,35 @@ export default function HomePage() {
             </div>
           ) : (
             <>
+              {/* Management Tools Section */}
+              <div className="mb-8">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">Management Tools</h2>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  <a
+                    href="http://192.168.1.221:5001"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-white rounded-lg border border-gray-200 p-6 hover:border-blue-300 hover:shadow-md transition-all group"
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-blue-100 rounded-lg">
+                          <Container className="h-6 w-6 text-blue-600" />
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-gray-900 group-hover:text-blue-600">Dockge</h3>
+                          <p className="text-sm text-gray-500">Docker Manager</p>
+                        </div>
+                      </div>
+                      <ExternalLink className="h-5 w-5 text-gray-400 group-hover:text-blue-600" />
+                    </div>
+                    <p className="text-sm text-gray-600">
+                      Visual interface for managing Docker Compose stacks on the remote server
+                    </p>
+                  </a>
+                </div>
+              </div>
+
               <div className="mb-6">
                 <h2 className="text-lg font-semibold text-gray-900">Projects</h2>
                 <p className="text-sm text-gray-600">
