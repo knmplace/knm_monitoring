@@ -67,6 +67,34 @@ export const projects: Project[] = [
     isRemote: true,
     remoteHost: '192.168.1.221',
   },
+  {
+    id: 'as-builts',
+    name: 'AS-BUILTS Reporting System',
+    description: 'BTR as-builts reporting and analytics platform with Excel upload, dashboard visualization, and FIR management',
+    pm2Processes: ['as-builts-dev', 'as-builts-prod'],
+    systemdServices: ['webhook-as-builts'],
+    ports: [3001, 3010, 9010],
+    logPaths: {
+      pm2: '/home/apps/as-builts/logs',
+      deployment: '/home/apps/as-builts/logs/deployment.log',
+      webhook: '/home/apps/as-builts/logs/webhook.log',
+    },
+    healthCheckUrl: 'http://localhost:3010/api/health',
+  },
+  {
+    id: 'wordsearch',
+    name: 'Word Search Puzzle Game',
+    description: 'Mobile-first word search puzzle game with 132 themed puzzles, user accounts, leaderboard, and cross-device play',
+    pm2Processes: ['wordsearch'],
+    systemdServices: [],
+    ports: [3021],
+    logPaths: {
+      pm2: '/home/apps/wordsearch/logs',
+      deployment: '/home/apps/wordsearch/logs/deployment.log',
+      webhook: '/home/apps/wordsearch/logs/webhook.log',
+    },
+    healthCheckUrl: 'http://localhost:3021',
+  },
   // Add more projects here as needed
   // Example:
   // {

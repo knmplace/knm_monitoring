@@ -13,6 +13,7 @@ import { StatusBadge } from '@/components/StatusBadge';
 import { LogModal } from '@/components/LogModal';
 import { WebhookStatus } from '@/components/WebhookStatus';
 import Link from 'next/link';
+import { UserManagement } from '@/components/UserManagement';
 import { ArrowLeft, Loader2, RefreshCw, Activity, Server, FileText, Rocket, Shield, Globe } from 'lucide-react';
 
 export default function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -448,6 +449,11 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                     onRefresh={fetchProjectData}
                   />
                 </div>
+              )}
+
+              {/* User Management - Wordsearch only */}
+              {id === 'wordsearch' && idToken && (
+                <UserManagement projectId={id} idToken={idToken} />
               )}
 
               {/* Logs Section */}
